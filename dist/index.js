@@ -32788,7 +32788,7 @@ function passed({coveragePercentage, coverageThreshold}) {
 
 // Create check run
 async function createCheck({context, octokit, success, title, summary, details, annotations}) {
-  core.info(`Adding check status to #{context.sha}`);
+  core.info(`Adding check status to ${context.sha}`);
   return octokit.rest.checks.create({
     owner: context.repo.owner,
     repo: context.repo.repo,
