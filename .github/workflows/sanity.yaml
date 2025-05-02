@@ -6,6 +6,7 @@ on:
 
 jobs:
   test-action:
+    name: Sanity test of action
     runs-on: ubuntu-latest
     permissions:
       checks: write

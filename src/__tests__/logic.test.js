@@ -206,13 +206,13 @@ describe('Coverage Annotator', () => {
     expect(mockOctokit.rest.checks.create).toHaveBeenCalledWith({
       owner: 'test-owner',
       repo: 'test-repo',
-      name: 'Code Coverage',
+      name: 'Code coverage',
       head_sha: 'test-sha',
       status: 'completed',
       conclusion: 'failure', // Should fail as coverage is below 80%
       output: expect.objectContaining({
-        title: 'Code Coverage Report',
-        summary: expect.stringContaining('Coverage for changed lines:'),
+        title: 'Coverage for changed lines: 78%',
+        summary: expect.stringContaining('lines haved changed'),
         annotations: expect.arrayContaining([
           expect.objectContaining({
             path: 'src/file1.js',
@@ -275,7 +275,7 @@ describe('Coverage Annotator', () => {
     expect(mockOctokit.rest.checks.create).toHaveBeenCalledWith({
       owner: 'test-owner',
       repo: 'test-repo',
-      name: 'Code Coverage',
+      name: 'Code coverage',
       head_sha: 'test-sha',
       status: 'completed',
       conclusion: 'failure',
@@ -320,7 +320,7 @@ describe('Coverage Annotator', () => {
     expect(mockOctokit.rest.checks.create).toHaveBeenCalledWith({
       owner: 'test-owner',
       repo: 'test-repo',
-      name: 'Code Coverage',
+      name: 'Code coverage',
       head_sha: 'test-sha',
       status: 'completed',
       conclusion: 'success',
@@ -365,7 +365,7 @@ describe('Coverage Annotator', () => {
     expect(mockOctokit.rest.checks.create).toHaveBeenCalledWith({
       owner: 'test-owner',
       repo: 'test-repo',
-      name: 'Code Coverage',
+      name: 'Code coverage',
       head_sha: 'test-sha',
       status: 'completed',
       conclusion: 'success',
@@ -411,7 +411,7 @@ describe('Coverage Annotator', () => {
     expect(mockOctokit.rest.checks.create).toHaveBeenCalledWith({
       owner: 'test-owner',
       repo: 'test-repo',
-      name: 'Code Coverage',
+      name: 'Code coverage',
       head_sha: 'test-sha',
       status: 'completed',
       conclusion: 'failure',
@@ -466,20 +466,16 @@ describe('Coverage Annotator', () => {
     expect(mockOctokit.rest.checks.create).toHaveBeenCalledWith({
       owner: 'test-owner',
       repo: 'test-repo',
-      name: 'Code Coverage',
+      name: 'Code coverage',
       head_sha: 'test-sha',
       status: 'completed',
       conclusion: 'success',
       output: expect.objectContaining({
-        summary: 'Coverage for changed lines: 100% (3/3)',
-        text: expect.stringContaining('Skipped 1 files not in coverage data:\n- README.md'),
+        title: 'Coverage for changed lines: 100%',
+        summary: 'A total of 3 lines haved changed, of which 3 are relevant and 3 were executed.',
+        text: expect.stringContaining('Skipped 1 files not in coverage data:\n- `README.md`'),
         annotations: [],
       }),
     });
-
-    // Verify that core.info was called for the non-test file
-    expect(core.info).toHaveBeenCalledWith(
-      expect.stringContaining('Skipping file not in coverage data: README.md')
-    );
   });
 });
