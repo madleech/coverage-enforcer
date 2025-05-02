@@ -261,13 +261,13 @@ async function run() {
     core.debug(JSON.stringify({totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles}));
 
     const coveragePercentage = calculateCoverage(coveredChangedLines, relevantChangedLines);
-    
+
     const {title, summary, details} = summarize({totalFiles, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, relevantChangedLines, totalChangedLines, skippedFiles});
     core.info([title, summary, details].join('\n\n'));
 
     const success = passed({coveragePercentage, coverageThreshold});
     if (annotate) await createCheck({context, octokit, success, title, summary, details, annotations});
-    
+
     // Set outputs
     core.setOutput('coverage-percentage', coveragePercentage);
     core.setOutput('total-lines', totalChangedLines);
@@ -281,6 +281,9 @@ async function run() {
     }
 
   } catch (error) {
+    console.error(error); // eslint-disable-line no-console
+
+    // Fail the action with the original error message
     core.setFailed(error.message);
   }
 }

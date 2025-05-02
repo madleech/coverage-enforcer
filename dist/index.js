@@ -32607,7 +32607,7 @@ function shouldAnalyzeFile(file, coverageData) {
 
   // Skip files not in coverage data
   if (!coverageData[file.filename]) {
-    core.info(`Skipping file not in coverage data: ${file.filename}`);
+    // core.info(`Skipping file not in coverage data: ${file.filename}`);
     return false;
   }
 
@@ -32638,6 +32638,22 @@ async function determineChangedFiles({context, octokit}) {
     });
     return compare.files;
   }
+}
+
+function calculateTotalMetrics(coverageData) {
+  const totalFiles = Object.entries(coverageData).length;
+  let totalRelevantLines = 0;
+  let totalCoveredLines = 0;
+
+  for (const fileCoverage of Object.values(coverageData)) {
+    for (const coverage of fileCoverage) {
+      if (coverage === null) continue;
+      totalRelevantLines++;
+      if (coverage > 0) totalCoveredLines++;
+    }
+  }
+
+  return {totalFiles, totalRelevantLines, totalCoveredLines};
 }
 
 // Process each changed file and calculate the lines that have changed
@@ -32742,20 +32758,22 @@ function determineChangedLines(changedFiles) {
   return output;
 }
 
-function calculateCoverage({coveredChangedLines, relevantChangedLines}) {
-  return relevantChangedLines > 0
-    ? Math.round((coveredChangedLines / relevantChangedLines) * 100)
+function calculateCoverage(coveredLines, relevantLines) {
+  return relevantLines > 0
+    ? Math.round((coveredLines / relevantLines) * 100)
     : 100;
 }
 
-function summarize({coveragePercentage, coveredChangedLines, totalChangedLines, relevantChangedLines, skippedFiles}) {
-  const summary = `Coverage for changed lines: ${coveragePercentage}% (${coveredChangedLines}/${relevantChangedLines})`;
+function summarize({totalFiles, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, totalChangedLines, relevantChangedLines, skippedFiles}) {
+  const title = `Coverage for changed lines: ${coveragePercentage}%`;
+  const summary = `A total of ${totalChangedLines} lines haved changed, of which ${relevantChangedLines} are relevant and ${coveredChangedLines} were executed.`;
 
-  let details = `A total of ${totalChangedLines} lines haved changed, of which ${relevantChangedLines} are relevant and ${coveredChangedLines} were executed`;
+  const totalCoveragePercent = calculateCoverage(totalCoveredLines, totalRelevantLines);
+  let details = `${totalFiles} files in total.\n\n${totalRelevantLines} relevant lines, ${totalCoveredLines} lines covered and ${totalCoveredLines-totalRelevantLines} lines missed. (${totalCoveragePercent}%)`;
   if (skippedFiles.length > 0) {
-    details += `\n\nSkipped ${skippedFiles.length} files not in coverage data:\n${skippedFiles.map(line => `- ${line}`).join('\n')}`;
+    details += `\n\nSkipped ${skippedFiles.length} files not in coverage data:\n${skippedFiles.map(line => `- \`${line}\``).join('\n')}`;
   }
-  return {summary, details};
+  return {title, summary, details};
 }
 
 function passed({coveragePercentage, coverageThreshold}) {
@@ -32763,16 +32781,16 @@ function passed({coveragePercentage, coverageThreshold}) {
 }
 
 // Create check run
-async function createCheck({context, octokit, success, summary, details, annotations}) {
+async function createCheck({context, octokit, success, title, summary, details, annotations}) {
   return octokit.rest.checks.create({
     owner: context.repo.owner,
     repo: context.repo.repo,
-    name: 'Code Coverage',
+    name: 'Code coverage',
     head_sha: context.sha,
     status: 'completed',
     conclusion: success ? 'success' : 'failure',
     output: {
-      title: 'Code Coverage Report',
+      title,
       summary,
       text: details,
       annotations: annotations
@@ -32795,16 +32813,18 @@ async function run() {
     const coverageData = read(coverageFile);
     const changedFiles = await determineChangedFiles({context, octokit});
 
+    const {totalFiles, totalRelevantLines, totalCoveredLines} = calculateTotalMetrics(coverageData);
     const {totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles} = process({changedFiles, coverageData});
     core.debug(JSON.stringify({totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles}));
 
-    const coveragePercentage = calculateCoverage({coveredChangedLines, relevantChangedLines});
-    const {summary, details} = summarize({coveragePercentage, coveredChangedLines, relevantChangedLines, totalChangedLines, skippedFiles});
-    core.info([summary, details].join('\n\n'));
+    const coveragePercentage = calculateCoverage(coveredChangedLines, relevantChangedLines);
+
+    const {title, summary, details} = summarize({totalFiles, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, relevantChangedLines, totalChangedLines, skippedFiles});
+    core.info([title, summary, details].join('\n\n'));
 
     const success = passed({coveragePercentage, coverageThreshold});
-    if (annotate) await createCheck({context, octokit, success, summary, details, annotations});
-    
+    if (annotate) await createCheck({context, octokit, success, title, summary, details, annotations});
+
     // Set outputs
     core.setOutput('coverage-percentage', coveragePercentage);
     core.setOutput('total-lines', totalChangedLines);
@@ -32818,6 +32838,9 @@ async function run() {
     }
 
   } catch (error) {
+    console.error(error); // eslint-disable-line no-console
+
+    // Fail the action with the original error message
     core.setFailed(error.message);
   }
 }

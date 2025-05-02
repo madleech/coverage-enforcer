@@ -478,4 +478,20 @@ describe('Coverage Annotator', () => {
       }),
     });
   });
+
+  it('logs error', async () => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Simulate a failure when reading the coverage file
+    readFileSyncMock.mockImplementation(() => {
+      throw new Error('Test error');
+    });
+
+    // Execute the action
+    await logic.run();
+
+    // Expect the error to have been logged via core.setFailed
+    expect(core.setFailed).toHaveBeenCalledWith('Test error');
+    expect(console.error).toHaveBeenCalled(); // eslint-disable-line no-console
+  })
 });
