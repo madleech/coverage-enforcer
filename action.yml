@@ -1,0 +1,29 @@
+name: 'Code Coverage Annotator'
+description: 'Annotates pull requests with code coverage information for changed lines'
+author: 'Michael Adams'
+inputs:
+  coverage-file:
+    description: 'Path to the JSON file containing coverage data'
+    required: true
+    default: coverage.json
+  coverage-threshold:
+    description: 'Minimum coverage percentage required for changed lines'
+    required: true
+    default: '90'
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+  annotate:
+    description: 'Annotate PRs? Set to false while testing'
+    default: true
+    required: true
+outputs:
+  coverage-percentage:
+    description: 'Percentage of changed lines that are covered by tests'
+  total-lines:
+    description: 'Total number of changed lines'
+  covered-lines:
+    description: 'Number of changed lines that are covered by tests'
+runs:
+  using: 'node20'
+  main: 'index.js'
