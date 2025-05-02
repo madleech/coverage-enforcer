@@ -209,7 +209,7 @@ function calculateCoverage(coveredLines, relevantLines) {
 
 function summarize({totalFiles, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, totalChangedLines, relevantChangedLines, skippedFiles, changedLines}) {
   const title = `Coverage for changed lines: ${coveragePercentage}%`;
-  const summary = `A total of ${totalChangedLines} lines haved changed, of which ${relevantChangedLines} are relevant and ${coveredChangedLines} were executed.`;
+  const summary = `A total of ${totalChangedLines} lines haved changed in ${Object.keys(changedLines).length} files, of which ${relevantChangedLines} are relevant and ${coveredChangedLines} were executed.`;
 
   const totalCoveragePercent = calculateCoverage(totalCoveredLines, totalRelevantLines);
   let details = `${totalFiles} files in total.\n\n${totalRelevantLines} relevant lines, ${totalCoveredLines} lines covered and ${totalCoveredLines-totalRelevantLines} lines missed. (${totalCoveragePercent}%)`;

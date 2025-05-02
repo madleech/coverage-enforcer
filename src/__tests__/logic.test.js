@@ -472,7 +472,7 @@ describe('Coverage Annotator', () => {
       conclusion: 'success',
       output: expect.objectContaining({
         title: 'Coverage for changed lines: 100%',
-        summary: 'A total of 3 lines haved changed, of which 3 are relevant and 3 were executed.',
+        summary: 'A total of 3 lines haved changed in 2 files, of which 3 are relevant and 3 were executed.',
         text: expect.stringContaining('Skipped 1 files not in coverage data:\n- `README.md`'),
         annotations: [],
       }),
