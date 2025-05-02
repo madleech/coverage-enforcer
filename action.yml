@@ -26,4 +26,4 @@ outputs:
     description: 'Number of changed lines that are covered by tests'
 runs:
   using: 'node20'
-  main: 'index.js'
+  main: 'dist/index.js'
