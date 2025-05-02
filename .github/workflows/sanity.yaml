@@ -14,3 +14,4 @@ jobs:
       - uses: ./
         with:
           coverage-file: "src/__tests__/coverage.json"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
