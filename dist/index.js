@@ -32776,7 +32776,7 @@ function summarize({totalFiles, totalRelevantLines, totalCoveredLines, coverageP
   if (Object.keys(changedLines).length > 0) {
     details += '\n\nChanged lines:';
     for(const [file, lines] of Object.entries(changedLines)) {
-      details += `- \`${file}\`: line number ${lines.join(', ')}`;
+      details += `\n- \`${file}\`: lines ${compactLineNumbers(lines)}`;
     }
   }
   return {title, summary, details};
@@ -32805,6 +32805,27 @@ async function createCheck({context, octokit, success, title, summary, details, 
   });
 }
 
+// turn [1, 2, 3, 5, 6] into "1-3, 5-6"
+function compactLineNumbers(lineNumbers) {
+  if (lineNumbers.length === 0) return '';
+  const ranges = [];
+  let start = lineNumbers[0];
+  let end = start;
+
+  for (let i = 1; i < lineNumbers.length; i++) {
+    const curr = lineNumbers[i];
+    if (curr === end + 1) {
+      end = curr;
+    } else {
+      ranges.push(start === end ? `${start}` : `${start}-${end}`);
+      start = end = curr;
+    }
+  }
+
+  ranges.push(start === end ? `${start}` : `${start}-${end}`);
+  return ranges.join(', ');
+}
+
 async function run() {
   try {
     // Get inputs
@@ -32819,11 +32840,12 @@ async function run() {
 
     const coverageData = read(coverageFile);
     const changedFiles = await determineChangedFiles({context, octokit});
+    core.debug(JSON.stringify({changedFiles}, "\n", 2));
 
     const changedLines = determineChangedLines(changedFiles);
     const {totalFiles, totalRelevantLines, totalCoveredLines} = calculateTotalMetrics(coverageData);
     const {totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles} = process({changedFiles, coverageData});
-    core.debug(JSON.stringify({totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles}));
+    core.debug(JSON.stringify({totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles}, "\n", 2));
 
     const coveragePercentage = calculateCoverage(coveredChangedLines, relevantChangedLines);
 
@@ -32853,7 +32875,7 @@ async function run() {
   }
 }
 
-module.exports = {read, determineChangedFiles, determineChangedLines, process, calculateCoverage, summarize, passed, createCheck, run}
+module.exports = {read, determineChangedFiles, determineChangedLines, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}
 
 
 /***/ }),

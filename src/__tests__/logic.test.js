@@ -168,6 +168,14 @@ describe('Coverage Annotator', () => {
     })
   })
 
+  describe('compactLineNumbers', () => {
+    it('generates ranges from line numbers', () => {
+      const input = [1, 2, 3, 4, 8, 10, 11, 12, 14, 15];
+      const expected = '1-4, 8, 10-12, 14-15';
+      expect(logic.compactLineNumbers(input)).toEqual(expected);
+    })
+  })
+
   it('should process pull request changes and create annotations for specific changed lines', async () => {
     // Mock coverage data
     const coverageData = {
