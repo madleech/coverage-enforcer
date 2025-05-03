@@ -202,14 +202,7 @@ describe('Coverage Annotator', () => {
   describe('analyzeCoverageForLines', () => {
     it('finds changes', () => {
       const filePath = 'slices/clinic/mailers/order_confirmation_mailer.rb';
-      const fileCoverage = [
-        null, null, 1,    null, 1,    1,    1,    1,
-        null, 1,    1,    1,    null, 1,    null, 1,
-        null, 1,    30,   30,   null, null, null, null,
-        1,    18,   null, null, 18,   null, 9,    null,
-        9,    null, null, 18,   null, null, 1,    null,
-        null, null, null, null, null, null, null
-      ];
+      const fileCoverage = [null,null,2,null,2,2,2,2,null,2,11,2,null,2,null,2,null,2,30,30,null,null,null,null,2,18,null,null,18,null,9,null,9,null,null,18,null,null,2,0,0,0,null,null,null,null,null];
       const changedLineNumbers = [
           1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
         12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
@@ -218,9 +211,11 @@ describe('Coverage Annotator', () => {
         45, 46, 47
       ];
 
-      const result = logic.analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
+      const {totalChangedLines, relevantChangedLines, coveredChangedLines} = logic.analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
 
-      console.log({result});
+      expect(totalChangedLines).toEqual(47);
+      expect(relevantChangedLines).toEqual(23);
+      expect(coveredChangedLines).toEqual(20);
     })
 
     it('finds changes for simple example', () => {
@@ -551,7 +546,7 @@ describe('Coverage Annotator', () => {
       conclusion: 'success',
       output: expect.objectContaining({
         title: 'Coverage for changed lines: 100%',
-        summary: 'A total of 3 lines haved changed in 2 files, of which 3 are relevant and 3 were executed.',
+        summary: 'A total of 6 lines haved changed in 2 files, of which 3 are relevant and 3 were executed.',
         text: expect.stringContaining('Skipped 1 files not in coverage data:\n- `README.md`'),
         annotations: [],
       }),

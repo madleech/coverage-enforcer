@@ -83,7 +83,14 @@ async function determineChangedFiles({context, octokit}) {
   }
 }
 
-function calculateTotalMetrics(coverageData) {
+function calculateTotalMetrics({changedLines, coverageData}) {
+  let totalChangedFiles = 0;
+  let totalChangedLines = 0;
+  for (const lines of Object.values(changedLines)) {
+    totalChangedFiles++;
+    totalChangedLines += lines.length;
+  }
+
   const totalFiles = Object.entries(coverageData).length;
   let totalRelevantLines = 0;
   let totalCoveredLines = 0;
@@ -96,7 +103,7 @@ function calculateTotalMetrics(coverageData) {
     }
   }
 
-  return {totalFiles, totalRelevantLines, totalCoveredLines};
+  return {totalChangedFiles, totalChangedLines, totalFiles, totalRelevantLines, totalCoveredLines};
 }
 
 // Process each changed file and calculate the lines that have changed
@@ -167,8 +174,6 @@ function processFile(file, coverageData) {
   const { totalChangedLines, relevantChangedLines, coveredChangedLines, annotations } =
     analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
 
-    console.log({filePath, fileCoverage, changedLineNumbers, totalChangedLines, relevantChangedLines, coveredChangedLines, annotations});
-
   return { skipped: false, totalChangedLines, relevantChangedLines, coveredChangedLines, annotations };
 }
 
@@ -209,12 +214,12 @@ function calculateCoverage(coveredLines, relevantLines) {
     : 100;
 }
 
-function summarize({totalFiles, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, totalChangedLines, relevantChangedLines, skippedFiles, changedLines}) {
+function summarize({totalFiles, totalChangedFiles, totalChangedLines, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, relevantChangedLines, skippedFiles, changedLines}) {
   const title = `Coverage for changed lines: ${coveragePercentage}%`;
-  const summary = `A total of ${totalChangedLines} lines haved changed in ${Object.keys(changedLines).length} files, of which ${relevantChangedLines} are relevant and ${coveredChangedLines} were executed.`;
+  const summary = `A total of ${totalChangedLines} lines haved changed in ${totalChangedFiles} files, of which ${relevantChangedLines} are relevant and ${coveredChangedLines} were executed.`;
 
   const totalCoveragePercent = calculateCoverage(totalCoveredLines, totalRelevantLines);
-  let details = `${totalFiles} files in total.\n\n${totalRelevantLines} relevant lines, ${totalCoveredLines} lines covered and ${totalCoveredLines-totalRelevantLines} lines missed. (${totalCoveragePercent}%)`;
+  let details = `${totalFiles} files are part of the test suite, with ${totalRelevantLines} executable lines, and ${totalCoveredLines} lines executed (${totalRelevantLines - totalCoveredLines} lines missed) = ${totalCoveragePercent}% coverage`;
   if (skippedFiles.length > 0) {
     details += `\n\nSkipped ${skippedFiles.length} files not in coverage data:\n${skippedFiles.map(line => `- \`${line}\``).join('\n')}`;
   }
@@ -299,14 +304,14 @@ async function run() {
     const changedFiles = await determineChangedFiles({context, octokit});
     core.debug(JSON.stringify({changedFiles}, "\n", 2));
 
-    const changedLines = determineChangedLines(changedFiles);
-    const {totalFiles, totalRelevantLines, totalCoveredLines} = calculateTotalMetrics(coverageData);
-    const {totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles} = process({changedFiles, coverageData});
-    core.debug(JSON.stringify({totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles}, "\n", 2));
+    const {relevantChangedLines, coveredChangedLines, annotations, skippedFiles} = process({changedFiles, coverageData});
 
     const coveragePercentage = calculateCoverage(coveredChangedLines, relevantChangedLines);
+    const changedLines = determineChangedLines(changedFiles);
+    const {totalChangedFiles, totalChangedLines, totalFiles, totalRelevantLines, totalCoveredLines} = calculateTotalMetrics({changedLines, coverageData});
+    const {title, summary, details} = summarize({totalFiles, totalChangedFiles, totalChangedLines, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, relevantChangedLines, skippedFiles, changedLines});
 
-    const {title, summary, details} = summarize({totalFiles, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, relevantChangedLines, totalChangedLines, skippedFiles, changedLines});
+    core.debug(JSON.stringify({totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles}, "\n", 2));
     core.info([title, summary, details].join('\n\n'));
 
     const success = passed({coveragePercentage, coverageThreshold});
