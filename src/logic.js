@@ -280,6 +280,7 @@ async function run() {
     // Initialize GitHub client
     const octokit = github.getOctokit(token);
     const context = github.context;
+    core.debug(JSON.stringify({context}, "\n", 2));
 
     const coverageData = read(coverageFile);
     const changedFiles = await determineChangedFiles({context, octokit});
