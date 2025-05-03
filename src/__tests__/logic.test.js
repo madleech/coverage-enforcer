@@ -14,7 +14,6 @@ const readFileSyncMock = jest.spyOn(fs, 'readFileSync').mockImplementation()
 describe('Coverage Annotator', () => {
   let mockOctokit;
   let mockContext;
-  let mockEvent;
 
   beforeEach(() => {
     // Reset all mocks
@@ -41,17 +40,16 @@ describe('Coverage Annotator', () => {
         owner: 'test-owner',
         repo: 'test-repo',
       },
-      sha: 'test-sha',
+      sha: 'merge-sha',
       issue: {
         number: 123,
       },
       eventName: 'pull_request',
-    };
-
-    mockEvent = {
-      pull_request: {
-        head: {
-          sha: 'test-sha'
+      payload: {
+        pull_request: {
+          head: {
+            sha: "head-sha"
+          }
         }
       }
     };
@@ -75,7 +73,6 @@ describe('Coverage Annotator', () => {
     // Setup github.getOctokit mock
     github.getOctokit.mockReturnValue(mockOctokit);
     github.context = mockContext;
-    github.event = mockEvent;
   });
 
 
@@ -144,7 +141,7 @@ describe('Coverage Annotator', () => {
         owner: 'test-owner',
         repo: 'test-repo',
         base: 'main',
-        head: 'test-sha'
+        head: 'merge-sha'
       });
 
       // Verify the result
@@ -189,7 +186,7 @@ describe('Coverage Annotator', () => {
   describe('determineCommitSha', () => {
     it('finds SHA for pull request events', () => {
       mockContext.eventName = 'pull_request';
-      mockEvent.pull_request.head.sha = 'abc1234';
+      mockContext.payload.pull_request.head.sha = 'abc1234';
 
       expect(logic.determineCommitSha(github)).toEqual('abc1234');
     })
@@ -289,7 +286,7 @@ describe('Coverage Annotator', () => {
       owner: 'test-owner',
       repo: 'test-repo',
       name: 'Code coverage',
-      head_sha: 'test-sha',
+      head_sha: 'head-sha',
       status: 'completed',
       conclusion: 'failure', // Should fail as coverage is below 80%
       output: expect.objectContaining({
@@ -358,7 +355,7 @@ describe('Coverage Annotator', () => {
       owner: 'test-owner',
       repo: 'test-repo',
       name: 'Code coverage',
-      head_sha: 'test-sha',
+      head_sha: 'merge-sha',
       status: 'completed',
       conclusion: 'failure',
       output: expect.objectContaining({
@@ -403,7 +400,7 @@ describe('Coverage Annotator', () => {
       owner: 'test-owner',
       repo: 'test-repo',
       name: 'Code coverage',
-      head_sha: 'test-sha',
+      head_sha: 'head-sha',
       status: 'completed',
       conclusion: 'success',
       output: expect.objectContaining({
@@ -448,7 +445,7 @@ describe('Coverage Annotator', () => {
       owner: 'test-owner',
       repo: 'test-repo',
       name: 'Code coverage',
-      head_sha: 'test-sha',
+      head_sha: 'head-sha',
       status: 'completed',
       conclusion: 'success',
       output: expect.objectContaining({
@@ -494,7 +491,7 @@ describe('Coverage Annotator', () => {
       owner: 'test-owner',
       repo: 'test-repo',
       name: 'Code coverage',
-      head_sha: 'test-sha',
+      head_sha: 'head-sha',
       status: 'completed',
       conclusion: 'failure',
       output: expect.objectContaining({
@@ -549,7 +546,7 @@ describe('Coverage Annotator', () => {
       owner: 'test-owner',
       repo: 'test-repo',
       name: 'Code coverage',
-      head_sha: 'test-sha',
+      head_sha: 'head-sha',
       status: 'completed',
       conclusion: 'success',
       output: expect.objectContaining({

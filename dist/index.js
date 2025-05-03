@@ -32813,7 +32813,7 @@ function determineCommitSha(github) {
   // If you want to get the commit ID for the last commit to the head branch of the pull request,
   // use github.event.pull_request.head.sha instead.
   if (github.context.eventName == 'pull_request') {
-    return github.event.pull_request.head.sha;
+    return github.context.payload.pull_request.head.sha;
   }
   return github.context.sha;
 }
