@@ -202,6 +202,54 @@ describe('Coverage Annotator', () => {
     })
   })
 
+  describe('analyzeCoverageForLines', () => {
+    it('finds changes', () => {
+      const filePath = 'slices/clinic/mailers/order_confirmation_mailer.rb';
+      const fileCoverage = [
+        null, null, 1,    null, 1,    1,    1,    1,
+        null, 1,    1,    1,    null, 1,    null, 1,
+        null, 1,    30,   30,   null, null, null, null,
+        1,    18,   null, null, 18,   null, 9,    null,
+        9,    null, null, 18,   null, null, 1,    null,
+        null, null, null, null, null, null, null
+      ];
+      const changedLineNumbers = [
+          1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
+        12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+        23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
+        45, 46, 47
+      ];
+
+      const result = logic.analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
+
+      console.log({result});
+    })
+
+    it('finds changes for simple example', () => {
+      const filePath = 'slices/clinic/mailers/order_confirmation_mailer.rb';
+      const fileCoverage = [
+        null, null, 1,    null, 1,    1,    1,    1,
+        null, 1,    1,    1,    null, 1,    null, 1,
+        null, 1,    30,   30,   null, null, null, null,
+        1,    18,   null, null, 18,   null, 9,    null,
+        9,    null, null, 18,   null, null, 1,    null,
+        null, null, null, null, null, null, null
+      ];
+      const changedLineNumbers = [
+          1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
+        12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+        23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
+        45, 46, 47
+      ];
+
+      const result = logic.analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
+
+      console.log({result});
+    })
+  })
+
   it('should process pull request changes and create annotations for specific changed lines', async () => {
     // Mock coverage data
     const coverageData = {

@@ -330,4 +330,4 @@ async function run() {
   }
 }
 
-module.exports = {read, determineChangedFiles, determineChangedLines, determineCommitSha, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}
+module.exports = {read, determineChangedFiles, determineChangedLines, determineCommitSha, analyzeCoverageForLines, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}

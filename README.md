@@ -4,7 +4,7 @@ A GitHub Action that annotates pull requests with code coverage information for 
 
 ## Motivation
 
-I strive for 100% coverage in my codebases. 
+I strive for 100% coverage in my codebases.
 
 ## Features
 
@@ -31,6 +31,14 @@ This will read in `coverage.json` with the following format:
 ```
 
 To convert your test coverage to the required format, use `madleech/coverage-converter-simplecov`.
+
+## Permissions Required
+
+This check requires the following permissions:
+
+* `checks: write` – To add check details to the PR
+* `contents: read` – To compare two commits
+* `pull-requests: read` – To list files in the PR
 
 ## Inputs
 

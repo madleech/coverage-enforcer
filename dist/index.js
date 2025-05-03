@@ -32724,6 +32724,8 @@ function processFile(file, coverageData) {
   const { totalChangedLines, relevantChangedLines, coveredChangedLines, annotations } =
     analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
 
+    console.log({filePath, fileCoverage, changedLineNumbers, totalChangedLines, relevantChangedLines, coveredChangedLines, annotations});
+
   return { skipped: false, totalChangedLines, relevantChangedLines, coveredChangedLines, annotations };
 }
 
@@ -32887,7 +32889,7 @@ async function run() {
   }
 }
 
-module.exports = {read, determineChangedFiles, determineChangedLines, determineCommitSha, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}
+module.exports = {read, determineChangedFiles, determineChangedLines, determineCommitSha, analyzeCoverageForLines, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}
 
 
 /***/ }),
