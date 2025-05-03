@@ -32788,12 +32788,13 @@ function passed({coveragePercentage, coverageThreshold}) {
 
 // Create check run
 async function createCheck({context, octokit, success, title, summary, details, annotations}) {
-  core.info(`Adding check status to ${context.sha}`);
+  const head_sha = determineCommitSha(context);
+  core.info(`Adding check status to ${head_sha}`);
   return octokit.rest.checks.create({
     owner: context.repo.owner,
     repo: context.repo.repo,
     name: 'Code coverage',
-    head_sha: context.sha,
+    head_sha,
     status: 'completed',
     conclusion: success ? 'success' : 'failure',
     output: {
@@ -32803,6 +32804,15 @@ async function createCheck({context, octokit, success, title, summary, details, 
       annotations: annotations
     }
   });
+}
+
+function determineCommitSha(context) {
+  if (context.eventName == 'pull_request') {
+    return context.payload.pull_request.head.repo.sha;
+  }
+  else if (context.eventName == 'push') {
+    return context.payload.ref;
+  }
 }
 
 // turn [1, 2, 3, 5, 6] into "1-3, 5-6"
