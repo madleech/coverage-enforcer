@@ -14,6 +14,7 @@ const readFileSyncMock = jest.spyOn(fs, 'readFileSync').mockImplementation()
 describe('Coverage Annotator', () => {
   let mockOctokit;
   let mockContext;
+  let mockEvent;
 
   beforeEach(() => {
     // Reset all mocks
@@ -47,6 +48,14 @@ describe('Coverage Annotator', () => {
       eventName: 'pull_request',
     };
 
+    mockEvent = {
+      pull_request: {
+        head: {
+          sha: 'test-sha'
+        }
+      }
+    };
+
     // Setup core.getInput mock
     core.getInput.mockImplementation((name) => {
       switch (name) {
@@ -66,6 +75,7 @@ describe('Coverage Annotator', () => {
     // Setup github.getOctokit mock
     github.getOctokit.mockReturnValue(mockOctokit);
     github.context = mockContext;
+    github.event = mockEvent;
   });
 
 
@@ -173,6 +183,22 @@ describe('Coverage Annotator', () => {
       const input = [1, 2, 3, 4, 8, 10, 11, 12, 14, 15];
       const expected = '1-4, 8, 10-12, 14-15';
       expect(logic.compactLineNumbers(input)).toEqual(expected);
+    })
+  })
+
+  describe('determineCommitSha', () => {
+    it('finds SHA for pull request events', () => {
+      mockContext.eventName = 'pull_request';
+      mockEvent.pull_request.head.sha = 'abc1234';
+
+      expect(logic.determineCommitSha(github)).toEqual('abc1234');
+    })
+
+    it('finds SHA for commits', () => {
+      mockContext.eventName = 'commit';
+      mockContext.sha = 'abc1234';
+
+      expect(logic.determineCommitSha(github)).toEqual('abc1234');
     })
   })
 

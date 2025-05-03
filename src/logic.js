@@ -230,12 +230,12 @@ function passed({coveragePercentage, coverageThreshold}) {
 }
 
 // Create check run
-async function createCheck({context, octokit, success, title, summary, details, annotations}) {
-  const head_sha = determineCommitSha(context);
+async function createCheck({github, octokit, success, title, summary, details, annotations}) {
+  const head_sha = determineCommitSha(github);
   core.info(`Adding check status to ${head_sha}`);
   return octokit.rest.checks.create({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
+    owner: github.context.repo.owner,
+    repo: github.context.repo.repo,
     name: 'Code coverage',
     head_sha,
     status: 'completed',
@@ -249,13 +249,14 @@ async function createCheck({context, octokit, success, title, summary, details, 
   });
 }
 
-function determineCommitSha(context) {
-  if (context.eventName == 'pull_request') {
-    return context.payload.pull_request.head.repo.sha;
+function determineCommitSha(github) {
+  // Note that GITHUB_SHA for this event is the last merge commit of the pull request merge branch.
+  // If you want to get the commit ID for the last commit to the head branch of the pull request,
+  // use github.event.pull_request.head.sha instead.
+  if (github.context.eventName == 'pull_request') {
+    return github.event.pull_request.head.sha;
   }
-  else if (context.eventName == 'push') {
-    return context.payload.ref;
-  }
+  return github.context.sha;
 }
 
 // turn [1, 2, 3, 5, 6] into "1-3, 5-6"
@@ -307,7 +308,7 @@ async function run() {
     core.info([title, summary, details].join('\n\n'));
 
     const success = passed({coveragePercentage, coverageThreshold});
-    if (annotate) await createCheck({context, octokit, success, title, summary, details, annotations});
+    if (annotate) await createCheck({github, octokit, success, title, summary, details, annotations});
 
     // Set outputs
     core.setOutput('coverage-percentage', coveragePercentage);
@@ -329,4 +330,4 @@ async function run() {
   }
 }
 
-module.exports = {read, determineChangedFiles, determineChangedLines, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}
+module.exports = {read, determineChangedFiles, determineChangedLines, determineCommitSha, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}
