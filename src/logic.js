@@ -1,6 +1,8 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const fs = require('fs');
+const File = require('./file');
+const util = require('./util');
 
 // Helper function to parse diff hunks and extract changed line numbers
 function parseDiffHunks(patch) {
@@ -40,23 +42,6 @@ function isRenamedOnly(file) {
   return file.previous_filename && !file.patch;
 }
 
-// Helper function to check if a file should be analyzed
-function shouldAnalyzeFile(file, coverageData) {
-  // Skip renamed files
-  if (isRenamedOnly(file)) {
-    core.info(`Skipping renamed file: ${file.filename} (previously ${file.previous_filename})`);
-    return false;
-  }
-
-  // Skip files not in coverage data
-  if (!coverageData[file.filename]) {
-    // core.info(`Skipping file not in coverage data: ${file.filename}`);
-    return false;
-  }
-
-  return true;
-}
-
 // Read coverage data
 function read(path) {
   return JSON.parse(fs.readFileSync(path, 'utf8'));
@@ -83,153 +68,59 @@ async function determineChangedFiles({context, octokit}) {
   }
 }
 
-function calculateTotalMetrics({changedLines, coverageData}) {
-  let totalChangedFiles = 0;
-  let totalChangedLines = 0;
-  for (const lines of Object.values(changedLines)) {
-    totalChangedFiles++;
-    totalChangedLines += lines.length;
-  }
-
-  const totalFiles = Object.entries(coverageData).length;
-  let totalRelevantLines = 0;
-  let totalCoveredLines = 0;
-
-  for (const fileCoverage of Object.values(coverageData)) {
-    for (const coverage of fileCoverage) {
-      if (coverage === null) continue;
-      totalRelevantLines++;
-      if (coverage > 0) totalCoveredLines++;
-    }
-  }
-
-  return {totalChangedFiles, totalChangedLines, totalFiles, totalRelevantLines, totalCoveredLines};
+function mapToFiles({coverageData, changedFiles}) {
+  return changedFiles.map((file) => {
+    const skipped = isRenamedOnly(file);
+    const changedLineNumbers = parseDiffHunks(file.patch);
+    return new File({
+      name: file.filename,
+      skipped,
+      changedLines: changedLineNumbers,
+      coverageData: coverageData[file.filename]
+    })
+  })
 }
 
-// Process each changed file and calculate the lines that have changed
-function analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers) {
-  let totalChangedLines = changedLineNumbers.length;
-  let relevantChangedLines = 0;
-  let coveredChangedLines = 0;
-  const annotations = [];
-  let currentAnnotation = null;
-  let currentEndLine = null;
-
-  for (const lineNumber of changedLineNumbers) {
-    const coverageIndex = lineNumber - 1;
-    if (coverageIndex < 0 || coverageIndex >= fileCoverage.length) continue;
-    const coverage = fileCoverage[coverageIndex];
-    if (coverage === null) continue;
-
-    relevantChangedLines++;
-    if (coverage > 0) coveredChangedLines++;
-
-    if (coverage === 0) {
-      if (!currentAnnotation) {
-        currentAnnotation = {
-          path: filePath,
-          start_line: lineNumber,
-          end_line: lineNumber,
-          annotation_level: 'warning',
-          message: 'This line has no test coverage'
-        };
-        currentEndLine = lineNumber;
-      } else if (lineNumber === currentEndLine + 1) {
-        currentEndLine = lineNumber;
-        currentAnnotation.end_line = lineNumber;
-      } else {
-        annotations.push(currentAnnotation);
-        currentAnnotation = {
-          path: filePath,
-          start_line: lineNumber,
-          end_line: lineNumber,
-          annotation_level: 'warning',
-          message: 'This line has no test coverage'
-        };
-        currentEndLine = lineNumber;
-      }
-    }
-  }
-
-  if (currentAnnotation) {
-    annotations.push(currentAnnotation);
-  }
-
-  return { totalChangedLines, relevantChangedLines, coveredChangedLines, annotations };
+function mapToAnnotations(files) {
+  const annotations = []
+  files.forEach(file => annotations.push(...file.annotations));
+  return annotations;
 }
 
-function processFile(file, coverageData) {
-  if (!shouldAnalyzeFile(file, coverageData)) {
-    return { skipped: true, filename: file.filename };
-  }
-
-  const filePath = file.filename;
-  const fileCoverage = coverageData[filePath];
-  const changedLineNumbers = parseDiffHunks(file.patch);
-
-  if (changedLineNumbers.length === 0) {
-    return { skipped: false, totalChangedLines: 0, relevantChangedLines: 0, coveredChangedLines: 0, annotations: [] };
-  }
-
-  const { totalChangedLines, relevantChangedLines, coveredChangedLines, annotations } =
-    analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
-
-  return { skipped: false, totalChangedLines, relevantChangedLines, coveredChangedLines, annotations };
-}
-
-function process({changedFiles, coverageData}) {
-  let totalChangedLines = 0; // total count of changed lines
-  let relevantChangedLines = 0; // count of changed lines that might be executed as part of the test suite (e.g. ignore specs, comments)
-  let coveredChangedLines = 0; // count of changed lines that were executed
-  const annotations = [];
-  const skippedFiles = [];
-
-  for (const file of changedFiles) {
-    const result = processFile(file, coverageData);
-    if (result.skipped) {
-      skippedFiles.push(result.filename);
-      continue;
-    }
-    totalChangedLines += result.totalChangedLines;
-    relevantChangedLines += result.relevantChangedLines;
-    coveredChangedLines += result.coveredChangedLines;
-    annotations.push(...result.annotations);
-  }
-
-  return { totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles };
-}
-
-function determineChangedLines(changedFiles) {
-  const output = {};
-  changedFiles.map(({filename, patch}) => {
-    const changedLineNumbers = parseDiffHunks(patch);
-    output[filename] = changedLineNumbers;
-  });
-  return output;
-}
-
-function calculateCoverage(coveredLines, relevantLines) {
+function calculateCoverage(files) {
+  const relevantLines = util.sum(files.map(file => file.relevantLinesCount));
+  const relevantExecutedLines = util.sum(files.map(file => file.relevantExecutedLinesCount));
   return relevantLines > 0
-    ? Math.round((coveredLines / relevantLines) * 100)
+    ? (relevantExecutedLines / relevantLines) * 100
     : 100;
 }
 
-function summarize({totalFiles, totalChangedFiles, totalChangedLines, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, relevantChangedLines, skippedFiles, changedLines}) {
-  const title = `Coverage for changed lines: ${coveragePercentage}%`;
-  const summary = `A total of ${totalChangedLines} lines haved changed in ${totalChangedFiles} files, of which ${relevantChangedLines} are relevant and ${coveredChangedLines} were executed.`;
+// generate summary for attaching to check.
+//
+// title = shown next to check. Very short summary.
+// summary = shown at top of job.
+// details = shown in body of job, contains full details of job
+function summarize({files, relevantFiles, coveragePercentage}) {
+  const totalRelevantChangedLines = util.sum(relevantFiles.map(file => file.relevantLinesCount));
 
-  const totalCoveragePercent = calculateCoverage(totalCoveredLines, totalRelevantLines);
-  let details = `${totalFiles} files are part of the test suite, with ${totalRelevantLines} executable lines, and ${totalCoveredLines} lines executed (${totalRelevantLines - totalCoveredLines} lines missed) = ${totalCoveragePercent}% coverage`;
-  if (skippedFiles.length > 0) {
-    details += `\n\nSkipped ${skippedFiles.length} files not in coverage data:\n${skippedFiles.map(line => `- \`${line}\``).join('\n')}`;
-  }
-  if (Object.keys(changedLines).length > 0) {
-    details += '\n\nChanged lines:';
-    for(const [file, lines] of Object.entries(changedLines)) {
-      details += `\n- \`${file}\`: lines ${compactLineNumbers(lines)}`;
+  const title = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)}`;
+  const summary = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)} – based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
+  let details = [
+    "| File | Skipped | Changed Lines | Missed Lines | Coverage |",
+    "|------|---------|---------------|--------------|----------|",
+  ];
+  files.forEach(file => {
+    if (file.skipped) {
+      details.push(
+        `| ${file.name} | ✓ | ${file.changedLinesCount} | - | - |`
+      )
+    } else {
+      details.push(
+        `| ${file.name} | ✗ | ${file.changedLinesCount} | ${file.relevantMissedLinesCount} | ${util.formatPercent(file.coveragePercent)} |`
+      )
     }
-  }
-  return {title, summary, details};
+  });
+  return {title, summary, details: details.join('\n')}
 }
 
 function passed({coveragePercentage, coverageThreshold}) {
@@ -266,27 +157,6 @@ function determineCommitSha(github) {
   return github.context.sha;
 }
 
-// turn [1, 2, 3, 5, 6] into "1-3, 5-6"
-function compactLineNumbers(lineNumbers) {
-  if (lineNumbers.length === 0) return '';
-  const ranges = [];
-  let start = lineNumbers[0];
-  let end = start;
-
-  for (let i = 1; i < lineNumbers.length; i++) {
-    const curr = lineNumbers[i];
-    if (curr === end + 1) {
-      end = curr;
-    } else {
-      ranges.push(start === end ? `${start}` : `${start}-${end}`);
-      start = end = curr;
-    }
-  }
-
-  ranges.push(start === end ? `${start}` : `${start}-${end}`);
-  return ranges.join(', ');
-}
-
 async function run() {
   try {
     // Get inputs
@@ -298,20 +168,18 @@ async function run() {
     // Initialize GitHub client
     const octokit = github.getOctokit(token);
     const context = github.context;
-    core.debug(JSON.stringify({context}, "\n", 2));
+    // core.debug(JSON.stringify({context}, "\n", 2));
 
     const coverageData = read(coverageFile);
     const changedFiles = await determineChangedFiles({context, octokit});
-    core.debug(JSON.stringify({changedFiles}, "\n", 2));
+    const files = mapToFiles({coverageData, changedFiles});
+    const relevantFiles = files.filter(file => !file.skipped);
+    // core.debug(JSON.stringify({files}, "\n", 2));
 
-    const {relevantChangedLines, coveredChangedLines, annotations, skippedFiles} = process({changedFiles, coverageData});
-
-    const coveragePercentage = calculateCoverage(coveredChangedLines, relevantChangedLines);
-    const changedLines = determineChangedLines(changedFiles);
-    const {totalChangedFiles, totalChangedLines, totalFiles, totalRelevantLines, totalCoveredLines} = calculateTotalMetrics({changedLines, coverageData});
-    const {title, summary, details} = summarize({totalFiles, totalChangedFiles, totalChangedLines, totalRelevantLines, totalCoveredLines, coveragePercentage, coveredChangedLines, relevantChangedLines, skippedFiles, changedLines});
-
-    core.debug(JSON.stringify({totalChangedLines, relevantChangedLines, coveredChangedLines, annotations, skippedFiles}, "\n", 2));
+    const annotations = mapToAnnotations(relevantFiles);
+    const coveragePercentage = calculateCoverage(relevantFiles);
+    const {title, summary, details} = summarize({files, relevantFiles, coveragePercentage});
+    core.debug(JSON.stringify({annotations}, "\n", 2));
     core.info([title, summary, details].join('\n\n'));
 
     const success = passed({coveragePercentage, coverageThreshold});
@@ -319,14 +187,10 @@ async function run() {
 
     // Set outputs
     core.setOutput('coverage-percentage', coveragePercentage);
-    core.setOutput('total-lines', totalChangedLines);
-    core.setOutput('relevant-lines', relevantChangedLines);
-    core.setOutput('covered-lines', coveredChangedLines);
-    core.setOutput('skipped-files', skippedFiles.join(','));
 
     // Fail if coverage is below threshold
     if (!success) {
-      core.setFailed(`Code coverage (${coveragePercentage}%) is below the required threshold (${coverageThreshold}%)`);
+      core.setFailed(`Code coverage (${util.formatPercent(coveragePercentage)}) is below the required threshold (${coverageThreshold}%)`);
     }
 
   } catch (error) {
@@ -337,4 +201,4 @@ async function run() {
   }
 }
 
-module.exports = {read, determineChangedFiles, determineChangedLines, determineCommitSha, analyzeCoverageForLines, process, calculateCoverage, summarize, passed, createCheck, compactLineNumbers, run}
+module.exports = {read, determineChangedFiles, determineCommitSha, calculateCoverage, summarize, passed, createCheck, run}

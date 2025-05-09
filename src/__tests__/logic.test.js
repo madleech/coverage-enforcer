@@ -149,40 +149,6 @@ describe('Coverage Annotator', () => {
     });
   })
 
-  describe('determineChangedLines', () => {
-    it('calculated changed line numbers', () => {
-      const diff = [
-        {
-          filename: 'src/file1.js',
-          patch: '@@ -6,7 +6,8 @@ module LiveSession\n' +
-            '       class Available < API::Action\n' +
-            '         include Deps[\n' +
-            '           :logger,\n' +
-            '-          live_session_repo: "repositories.live_session"\n' +
-            '+          live_session_repo: "repositories.live_session",\n' +
-            '+          live_session_event_repo: "repositories.live_session_event"\n' +
-            '         ]\n' +
-            ' \n' +
-            '         contract do'
-        }
-      ];
-
-      const expected = {
-        'src/file1.js': [9, 10]
-      }
-
-      expect(logic.determineChangedLines(diff)).toEqual(expected);
-    })
-  })
-
-  describe('compactLineNumbers', () => {
-    it('generates ranges from line numbers', () => {
-      const input = [1, 2, 3, 4, 8, 10, 11, 12, 14, 15];
-      const expected = '1-4, 8, 10-12, 14-15';
-      expect(logic.compactLineNumbers(input)).toEqual(expected);
-    })
-  })
-
   describe('determineCommitSha', () => {
     it('finds SHA for pull request events', () => {
       mockContext.eventName = 'pull_request';
@@ -199,49 +165,6 @@ describe('Coverage Annotator', () => {
     })
   })
 
-  describe('analyzeCoverageForLines', () => {
-    it('finds changes', () => {
-      const filePath = 'slices/clinic/mailers/order_confirmation_mailer.rb';
-      const fileCoverage = [null,null,2,null,2,2,2,2,null,2,11,2,null,2,null,2,null,2,30,30,null,null,null,null,2,18,null,null,18,null,9,null,9,null,null,18,null,null,2,0,0,0,null,null,null,null,null];
-      const changedLineNumbers = [
-          1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
-        12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-        23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
-        45, 46, 47
-      ];
-
-      const {totalChangedLines, relevantChangedLines, coveredChangedLines} = logic.analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
-
-      expect(totalChangedLines).toEqual(47);
-      expect(relevantChangedLines).toEqual(23);
-      expect(coveredChangedLines).toEqual(20);
-    })
-
-    it('finds changes for simple example', () => {
-      const filePath = 'slices/clinic/mailers/order_confirmation_mailer.rb';
-      const fileCoverage = [
-        null, null, 1,    null, 1,    1,    1,    1,
-        null, 1,    1,    1,    null, 1,    null, 1,
-        null, 1,    30,   30,   null, null, null, null,
-        1,    18,   null, null, 18,   null, 9,    null,
-        9,    null, null, 18,   null, null, 1,    null,
-        null, null, null, null, null, null, null
-      ];
-      const changedLineNumbers = [
-          1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11,
-        12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-        23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-        34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
-        45, 46, 47
-      ];
-
-      const result = logic.analyzeCoverageForLines(filePath, fileCoverage, changedLineNumbers);
-
-      console.log({result});
-    })
-  })
-
   it('should process pull request changes and create annotations for specific changed lines', async () => {
     // Mock coverage data
     const coverageData = {
@@ -254,6 +177,7 @@ describe('Coverage Annotator', () => {
       data: [
         {
           filename: 'src/file1.js',
+          previous_filename: 'src/file1.js',
           patch: `@@ -1,5 +1,5 @@
 +1
 +2
@@ -285,22 +209,22 @@ describe('Coverage Annotator', () => {
       status: 'completed',
       conclusion: 'failure', // Should fail as coverage is below 80%
       output: expect.objectContaining({
-        title: 'Coverage for changed lines: 78%',
-        summary: expect.stringContaining('lines haved changed'),
+        title: 'Coverage for changed lines: 77.8%',
+        summary: expect.stringContaining('lines changed'),
         annotations: expect.arrayContaining([
           expect.objectContaining({
             path: 'src/file1.js',
             start_line: 2,
             end_line: 2,
             annotation_level: 'warning',
-            message: 'This line has no test coverage',
+            message: 'Line 2 has no coverage',
           }),
           expect.objectContaining({
             path: 'src/file1.js',
             start_line: 5,
             end_line: 5,
             annotation_level: 'warning',
-            message: 'This line has no test coverage',
+            message: 'Line 5 has no coverage',
           }),
         ]),
       }),
@@ -360,7 +284,7 @@ describe('Coverage Annotator', () => {
             start_line: 4,
             end_line: 4,
             annotation_level: 'warning',
-            message: 'This line has no test coverage',
+            message: 'Line 4 has no coverage',
           }),
         ]),
       }),
@@ -444,14 +368,10 @@ describe('Coverage Annotator', () => {
       status: 'completed',
       conclusion: 'success',
       output: expect.objectContaining({
+        text: expect.stringContaining('src/new-name.js | ✓'),
         annotations: [],
       }),
     });
-
-    // Verify that core.info was called for the renamed file
-    expect(core.info).toHaveBeenCalledWith(
-      expect.stringContaining('Skipping renamed file: src/new-name.js')
-    );
   });
 
   it('should handle renamed files with content changes', async () => {
@@ -496,7 +416,7 @@ describe('Coverage Annotator', () => {
             start_line: 2,
             end_line: 2,
             annotation_level: 'warning',
-            message: 'This line has no test coverage',
+            message: 'Line 2 has no coverage',
           }),
         ]),
       }),
@@ -515,6 +435,7 @@ describe('Coverage Annotator', () => {
       data: [
         {
           filename: 'src/test.js',
+          previous_filename: 'src/test.js',
           patch: `@@ -1,3 +1,3 @@
 +1
 +2
@@ -522,6 +443,7 @@ describe('Coverage Annotator', () => {
         },
         {
           filename: 'README.md',
+          previous_filename: 'README.md',
           patch: `@@ -1,3 +1,3 @@
 +1
 +2
@@ -546,8 +468,8 @@ describe('Coverage Annotator', () => {
       conclusion: 'success',
       output: expect.objectContaining({
         title: 'Coverage for changed lines: 100%',
-        summary: 'A total of 6 lines haved changed in 2 files, of which 3 are relevant and 3 were executed.',
-        text: expect.stringContaining('Skipped 1 files not in coverage data:\n- `README.md`'),
+        summary: expect.stringContaining('based on 3 lines changed in 1 file'),
+        text: expect.stringContaining('| README.md | ✓ | 3 | - | - |', '| src/test.js | ✗ | 3 | 0 | 100% |'),
         annotations: [],
       }),
     });
