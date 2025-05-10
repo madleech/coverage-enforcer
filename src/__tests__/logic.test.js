@@ -468,7 +468,7 @@ describe('Coverage Annotator', () => {
       conclusion: 'success',
       output: expect.objectContaining({
         title: 'Coverage for changed lines: 100%',
-        summary: expect.stringContaining('based on 3 lines changed in 1 file'),
+        summary: expect.stringContaining('Based on 3 lines changed in 1 file'),
         text: expect.stringContaining('| README.md | ✓ | 3 | - | - |', '| src/test.js | ✗ | 3 | 0 | 100% |'),
         annotations: [],
       }),

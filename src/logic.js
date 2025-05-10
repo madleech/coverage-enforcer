@@ -104,7 +104,7 @@ function summarize({files, relevantFiles, coveragePercentage}) {
   const totalRelevantChangedLines = util.sum(relevantFiles.map(file => file.relevantLinesCount));
 
   const title = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)}`;
-  const summary = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)} – based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
+  const summary = `Based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
   let details = [
     "| File | Skipped | Changed Lines | Missed Lines | Coverage |",
     "|------|---------|---------------|--------------|----------|",
@@ -116,7 +116,7 @@ function summarize({files, relevantFiles, coveragePercentage}) {
       )
     } else {
       details.push(
-        `| ${file.name} | ✗ | ${file.changedLinesCount} | ${file.relevantMissedLinesCount} | ${util.formatPercent(file.coveragePercent)} |`
+        `| ${file.name} | - | ${file.changedLinesCount} | ${file.relevantMissedLinesCount} | ${util.formatPercent(file.coveragePercent)} |`
       )
     }
   });

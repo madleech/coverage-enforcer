@@ -32658,10 +32658,6 @@ class File {
     return this.relevantMissedLines.length;
   }
 
-  get relevantMissedLineRanges() {
-    return util.compactLineNumbers(this.relevantMissedLines);
-  }
-
   // changed lines that aren't executed. Notably this includes ignored lines so that we can
   // generate more user-friendly line ranges
   get changedUnexecutedLines() {
@@ -32830,7 +32826,7 @@ function summarize({files, relevantFiles, coveragePercentage}) {
   const totalRelevantChangedLines = util.sum(relevantFiles.map(file => file.relevantLinesCount));
 
   const title = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)}`;
-  const summary = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)} – based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
+  const summary = `Based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
   let details = [
     "| File | Skipped | Changed Lines | Missed Lines | Coverage |",
     "|------|---------|---------------|--------------|----------|",
@@ -32842,7 +32838,7 @@ function summarize({files, relevantFiles, coveragePercentage}) {
       )
     } else {
       details.push(
-        `| ${file.name} | ✗ | ${file.changedLinesCount} | ${file.relevantMissedLinesCount} | ${util.formatPercent(file.coveragePercent)} |`
+        `| ${file.name} | - | ${file.changedLinesCount} | ${file.relevantMissedLinesCount} | ${util.formatPercent(file.coveragePercent)} |`
       )
     }
   });
@@ -32936,35 +32932,6 @@ module.exports = {read, determineChangedFiles, determineCommitSha, calculateCove
 /***/ ((module) => {
 
 // turn [1, 2, 3, 5, 6] into "1-3, 5-6"
-function compactLineNumbers(lineNumbers) {
-  if (lineNumbers.length === 0) return [];
-  const ranges = [];
-  let start = lineNumbers[0];
-  let end = start;
-
-  for (let i = 1; i < lineNumbers.length; i++) {
-    const curr = lineNumbers[i];
-    if (curr === end + 1) {
-      end = curr;
-    } else {
-      ranges.push({
-        start,
-        end,
-        formatted: start === end ? `${start}` : `${start}-${end}`
-      });
-      start = end = curr;
-    }
-  }
-
-  ranges.push({
-    start,
-    end,
-    formatted: start === end ? `${start}` : `${start}-${end}`
-  });
-  return ranges;
-}
-
-// turn [1, 2, 3, 5, 6] into "1-3, 5-6"
 // states:
 //   0 = searching for start
 //   1 = waiting to find end
@@ -33028,12 +32995,6 @@ function compactCountsToLineNumbers(counts) {
         break;
     }
   }
-
-  // tidy up end
-  if (mode == WAITING_FOR_END) {
-    end = counts.length;
-    addToRange(start, end)
-  }
   return ranges;
 }
 
@@ -33048,7 +33009,7 @@ function formatPercent(percentage, dp = 1) {
   return `${Math.round(percentage * scaler) / scaler}%`;
 }
 
-module.exports = {compactLineNumbers, compactCountsToLineNumbers, sum, formatPercent}
+module.exports = {compactCountsToLineNumbers, sum, formatPercent}
 
 
 /***/ }),

@@ -1,19 +1,6 @@
 const util = require('../util')
 
 describe('util', () => {
-  describe('compactLineNumbers', () => {
-    it('generates ranges from line numbers', () => {
-      const input = [1, 2, 3, 4, 8, 10, 11, 12, 14, 15];
-      const expected = [
-        {start: 1, end: 4, formatted: '1-4'},
-        {start: 8, end: 8, formatted: '8'},
-        {start: 10, end: 12, formatted: '10-12'},
-        {start: 14, end: 15, formatted: '14-15'}
-      ];
-      expect(util.compactLineNumbers(input)).toEqual(expected);
-    })
-  })
-
   describe('compactCountsToLineNumbers', () => {
     it('handles empties', () => {
       expect(util.compactCountsToLineNumbers([])).toEqual([])

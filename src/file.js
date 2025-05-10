@@ -101,10 +101,6 @@ class File {
     return this.relevantMissedLines.length;
   }
 
-  get relevantMissedLineRanges() {
-    return util.compactLineNumbers(this.relevantMissedLines);
-  }
-
   // changed lines that aren't executed. Notably this includes ignored lines so that we can
   // generate more user-friendly line ranges
   get changedUnexecutedLines() {

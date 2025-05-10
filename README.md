@@ -4,15 +4,16 @@ A GitHub Action that annotates pull requests with code coverage information for 
 
 ## Motivation
 
-I strive for 100% coverage in my codebases.
+I strive for 100% coverage. However often when working on legacy codebases, the existing levels of coverage leave much to be desired. I have found the lowest-friction way to improve coverage on these codebases is to set a very high coverage target for all _new_ code. By providng line-by-line coverage feedback, we can provide instant feedback in pull requests of committed changes that lack test coverage.
+
+The most crucial difference between line-by-line coverage feedback on modified lines, versus coverage feedback on entire files, is that it allows you to make small, targeted fixes in legacy code, without being penalised for missing test coverage in the rest of the file.
 
 ## Features
 
-- Annotates pull requests with uncovered lines
-- Groups sequential uncovered lines into single annotations
-- Calculates coverage percentage for changed lines
-- Fails the check if coverage is below the configured threshold
-- Works with both pull requests and direct pushes to branches
+- Annotates pull requests, flagging lines that have changed but are not executed by the test suite.
+- Calculates coverage percentage for changed lines.
+- Fails the check if total coverage for changed lines is below the configured threshold.
+- Works with both pull requests and direct pushes to branches.
 
 ## Usage
 

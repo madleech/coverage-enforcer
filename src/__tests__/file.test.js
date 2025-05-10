@@ -30,7 +30,6 @@ describe('File', () => {
     expect(instance.relevantLinesCount).toEqual(2);
     expect(instance.relevantMissedLines).toEqual([2]);
     expect(instance.relevantMissedLinesCount).toEqual(1);
-    expect(instance.relevantMissedLineRanges).toEqual([{"start": 2, "end": 2, "formatted": "2"}])
     expect(instance.changedUnexecutedLines).toEqual([2, 3])
     expect(instance.changedUnexecutedLineRanges).toEqual([{"start": 2, "end": 2, "formatted": "2"}])
     expect(instance.wholeFileUnexecuted).toEqual(false);
