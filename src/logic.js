@@ -106,8 +106,8 @@ function summarize({files, relevantFiles, coveragePercentage}) {
   const title = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)}`;
   const summary = `Based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
   let details = [
-    "| File | Skipped | Changed Lines | Missed Lines | Coverage |",
-    "|------|---------|---------------|--------------|----------|",
+    "| File | Skipped | Changed Lines | Changed Unexecuted Lines | Coverage |",
+    "|------|---------|---------------|--------------------------|----------|",
   ];
   files.forEach(file => {
     if (file.skipped) {

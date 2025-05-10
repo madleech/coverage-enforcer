@@ -15,6 +15,14 @@ The most crucial difference between line-by-line coverage feedback on modified l
 - Fails the check if total coverage for changed lines is below the configured threshold.
 - Works with both pull requests and direct pushes to branches.
 
+## Example
+
+**Check summary** – showing details on the files that were changed, whether they were part of the test suite, the number of lines that were changed, and the resulting coverage of those changed lines:
+![Check summary|https://github.com/madleech/coverage-enforcer/blob/initial-version/doc/check-summary.png?raw=true]
+
+**Annotation** – highlighting an unreachable code block:
+![Check summary|https://github.com/madleech/coverage-enforcer/blob/initial-version/doc/annotation.png?raw=true]
+
 ## Usage
 
 To use in a Github workflow, run your tests as normal, then add the following step:
