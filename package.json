@@ -2,7 +2,7 @@
   "name": "coverage-annotator",
   "version": "1.0.0",
   "description": "GitHub Action for annotating PRs with code coverage information",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "ncc build index.js -o dist",
     "test": "jest --transformIgnorePatterns node_modules",
