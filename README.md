@@ -27,7 +27,7 @@ The most crucial difference between line-by-line coverage feedback on modified l
 
 To use in a Github workflow, run your tests as normal, then add the following step:
 ```yaml
-    - uses: madleech/coverage-enforcer
+    - uses: madleech/coverage-enforcer@v1
       with:
         coverage-threshold: 100
 ```
@@ -39,7 +39,18 @@ This will read in `coverage.json` with the following format:
 }
 ```
 
-To convert your test coverage to the required format, use `madleech/coverage-converter-simplecov`.
+To convert your test coverage to the required format, use `madleech/coverage-converter-simplecov` or `madleech/coverage-converter-clover`, see [all available converter](https://github.com/madleech?tab=repositories&q=coverage-converter).
+
+For example, for a Javascript project:
+```yaml
+    - name: Run tests
+      run: npm run test
+
+    - uses: madleech/coverage-converter-clover@v1
+    - uses: madleech/coverage-enforcer@v1
+      with:
+        coverage-threshold: 100
+```
 
 ## Permissions Required
 

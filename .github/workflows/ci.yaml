@@ -43,3 +43,30 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20.x
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate coverage
+        run: npm run test -- --runInBand --coverage --collectCoverageFrom="src/*.js"
+
+      - name: Covert coverage format
+        uses: madleech/coverage-converter-clover@v1
+
+      - name: Enforce coverage
+        uses: madleech/coverage-enforcer@v1
+        with:
+          threshold: 100
+          token: ${{ secrets.GITHUB_TOKEN }}
