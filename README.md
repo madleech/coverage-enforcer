@@ -44,14 +44,21 @@ To convert your test coverage to the required format, use `madleech/coverage-con
 
 For example, for a Javascript project:
 ```yaml
-    - name: Run tests
-      run: npm run test
+jobs:
+  coverage:
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Run tests
+        run: npm run test -- --coverage
 
-    - uses: madleech/coverage-converter-clover@v1
-    - uses: madleech/coverage-enforcer@v1
-      with:
-        coverage-threshold: 100
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: madleech/coverage-converter-clover@v1
+      - uses: madleech/coverage-enforcer@v1
+        with:
+          coverage-threshold: 100
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Permissions Required
