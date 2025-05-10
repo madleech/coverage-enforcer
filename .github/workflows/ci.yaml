@@ -68,5 +68,5 @@ jobs:
       - name: Enforce coverage
         uses: madleech/coverage-enforcer@v1
         with:
-          threshold: 100
-          token: ${{ secrets.GITHUB_TOKEN }}
+          coverage-threshold: 100
+          github-token: ${{ secrets.GITHUB_TOKEN }}

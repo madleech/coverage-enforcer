@@ -30,6 +30,7 @@ To use in a Github workflow, run your tests as normal, then add the following st
     - uses: madleech/coverage-enforcer@v1
       with:
         coverage-threshold: 100
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 This will read in `coverage.json` with the following format:
@@ -50,6 +51,7 @@ For example, for a Javascript project:
     - uses: madleech/coverage-enforcer@v1
       with:
         coverage-threshold: 100
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
 ## Permissions Required
