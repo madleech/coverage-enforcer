@@ -18,10 +18,10 @@ The most crucial difference between line-by-line coverage feedback on modified l
 ## Example
 
 **Check summary** – showing details on the files that were changed, whether they were part of the test suite, the number of lines that were changed, and the resulting coverage of those changed lines:
-![Check summary](https://github.com/madleech/coverage-enforcer/blob/initial-version/doc/check-summary.png?raw=true)
+![Check summary](https://github.com/madleech/coverage-enforcer/blob/master/doc/check-summary.png?raw=true)
 
 **Annotation** – highlighting an unreachable code block:
-![Check summary](https://github.com/madleech/coverage-enforcer/blob/initial-version/doc/annotation.png?raw=true)
+![Check summary](https://github.com/madleech/coverage-enforcer/blob/master/doc/annotation.png?raw=true)
 
 ## Usage
 
