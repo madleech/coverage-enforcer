@@ -165,6 +165,90 @@ describe('Coverage Annotator', () => {
     })
   })
 
+  describe('calculateTotalCoverage', () => {
+    it('calculates total coverage for multiple files', () => {
+      const coverageData = {
+        'src/file1.js': [1, 1, 0, null, 1], // 4 executable lines, 3 executed = 75%
+        'src/file2.js': [1, 0, 1, 1, null], // 4 executable lines, 3 executed = 75%
+      };
+      // Total: 8 executable lines, 6 executed = 75%
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBe(75);
+    });
+
+    it('returns 100% when all lines are covered', () => {
+      const coverageData = {
+        'src/file1.js': [1, 1, 1, null, 1], // 4 executable lines, 4 executed = 100%
+        'src/file2.js': [1, 1, null, 1], // 3 executable lines, 3 executed = 100%
+      };
+      // Total: 7 executable lines, 7 executed = 100%
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBe(100);
+    });
+
+    it('returns 0% when no lines are covered', () => {
+      const coverageData = {
+        'src/file1.js': [0, 0, 0, null, 0], // 4 executable lines, 0 executed = 0%
+        'src/file2.js': [0, 0, null, 0], // 3 executable lines, 0 executed = 0%
+      };
+      // Total: 7 executable lines, 0 executed = 0%
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBe(0);
+    });
+
+    it('handles empty coverage data', () => {
+      const coverageData = {};
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBe(100); // Returns 100% when no executable lines
+    });
+
+    it('handles files with only null values (no executable lines)', () => {
+      const coverageData = {
+        'src/file1.js': [null, null, null],
+        'src/file2.js': [null, null],
+      };
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBe(100); // Returns 100% when no executable lines
+    });
+
+    it('correctly calculates coverage with mixed null and executable lines', () => {
+      const coverageData = {
+        'src/file1.js': [null, 1, null, 0, null, 1, null], // 3 executable lines, 2 executed = 66.67%
+      };
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBeCloseTo(66.67, 1);
+    });
+
+    it('handles single file with partial coverage', () => {
+      const coverageData = {
+        'src/file1.js': [1, 0, 1, 0, 1], // 5 executable lines, 3 executed = 60%
+      };
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBe(60);
+    });
+
+    it('handles files with different coverage percentages', () => {
+      const coverageData = {
+        'src/file1.js': [1, 1, 1], // 3 executable lines, 3 executed = 100%
+        'src/file2.js': [1, 0, 0], // 3 executable lines, 1 executed = 33.33%
+        'src/file3.js': [0, 0, 0], // 3 executable lines, 0 executed = 0%
+      };
+      // Total: 9 executable lines, 4 executed = 44.44%
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBeCloseTo(44.44, 1);
+    });
+
+    it('handles large numbers correctly', () => {
+      const coverageData = {
+        'src/file1.js': Array(100).fill(1), // 100 executable lines, 100 executed = 100%
+        'src/file2.js': Array(100).fill(0), // 100 executable lines, 0 executed = 0%
+      };
+      // Total: 200 executable lines, 100 executed = 50%
+      const result = logic.calculateTotalCoverage(coverageData);
+      expect(result).toBe(50);
+    });
+  })
+
   it('should process pull request changes and create annotations for specific changed lines', async () => {
     // Mock coverage data
     const coverageData = {
@@ -229,6 +313,10 @@ describe('Coverage Annotator', () => {
         ]),
       }),
     });
+
+    // Verify outputs are set correctly
+    expect(core.setOutput).toHaveBeenCalledWith('coverage-percentage', expect.any(Number));
+    expect(core.setOutput).toHaveBeenCalledWith('total-coverage-percentage', expect.any(Number));
   });
 
   it('should handle push events with specific line changes', async () => {
@@ -489,5 +577,42 @@ describe('Coverage Annotator', () => {
     // Expect the error to have been logged via core.setFailed
     expect(core.setFailed).toHaveBeenCalledWith('Test error');
     expect(console.error).toHaveBeenCalled(); // eslint-disable-line no-console
+  })
+
+  it('sets both coverage-percentage and total-coverage-percentage outputs correctly', async () => {
+    // Mock coverage data with multiple files
+    const coverageData = {
+      'src/file1.js': [1, 0, 1, null, 1], // 4 executable lines, 3 executed = 75%
+      'src/file2.js': [1, 1, 1, null], // 3 executable lines, 3 executed = 100%
+      'src/file3.js': [0, 0, null, 0], // 3 executable lines, 0 executed = 0%
+    };
+    // Total coverage: 10 executable lines, 6 executed = 60%
+    readFileSyncMock.mockReturnValue(JSON.stringify(coverageData));
+
+    // Mock pull request files - only file1.js is changed
+    mockOctokit.rest.pulls.listFiles.mockResolvedValue({
+      data: [
+        {
+          filename: 'src/file1.js',
+          previous_filename: 'src/file1.js',
+          patch: `@@ -1,5 +1,5 @@
++1
++2
++3
++4
++5`,
+        },
+      ],
+    });
+
+    // Import and run the action
+    logic.run()
+
+    // Wait for async operations
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Verify outputs are set with correct values
+    expect(core.setOutput).toHaveBeenCalledWith('coverage-percentage', 75); // Changed lines coverage
+    expect(core.setOutput).toHaveBeenCalledWith('total-coverage-percentage', 60); // Total coverage across all files
   })
 });
