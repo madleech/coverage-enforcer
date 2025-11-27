@@ -95,6 +95,30 @@ function calculateCoverage(files) {
     : 100;
 }
 
+// Calculate total coverage across all files in the coverage data
+function calculateTotalCoverage(coverageData) {
+  let totalExecutableLines = 0;
+  let totalExecutedLines = 0;
+
+  for (const filePath in coverageData) {
+    const lineCounts = coverageData[filePath];
+    for (const count of lineCounts) {
+      // null means line is not executable (comments, blank lines)
+      if (count !== null) {
+        totalExecutableLines++;
+        // count > 0 means line was executed
+        if (count > 0) {
+          totalExecutedLines++;
+        }
+      }
+    }
+  }
+
+  return totalExecutableLines > 0
+    ? (totalExecutedLines / totalExecutableLines) * 100
+    : 100;
+}
+
 // generate summary for attaching to check.
 //
 // title = shown next to check. Very short summary.
@@ -178,6 +202,7 @@ async function run() {
 
     const annotations = mapToAnnotations(relevantFiles);
     const coveragePercentage = calculateCoverage(relevantFiles);
+    const totalCoveragePercentage = calculateTotalCoverage(coverageData);
     const {title, summary, details} = summarize({files, relevantFiles, coveragePercentage});
     core.debug(JSON.stringify({annotations}, "\n", 2));
     core.info([title, summary, details].join('\n\n'));
@@ -187,6 +212,7 @@ async function run() {
 
     // Set outputs
     core.setOutput('coverage-percentage', coveragePercentage);
+    core.setOutput('total-coverage-percentage', totalCoveragePercentage);
 
     // Fail if coverage is below threshold
     if (!success) {
@@ -201,4 +227,4 @@ async function run() {
   }
 }
 
-module.exports = {read, determineChangedFiles, determineCommitSha, calculateCoverage, summarize, passed, createCheck, run}
+module.exports = {read, determineChangedFiles, determineCommitSha, calculateCoverage, calculateTotalCoverage, summarize, passed, createCheck, run}
