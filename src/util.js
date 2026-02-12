@@ -71,9 +71,13 @@ function sum(items) {
   return sum;
 }
 
-function formatPercent(percentage, dp = 1) {
+function roundToPrecision(number, dp = 1) {
   const scaler = 10**dp;
-  return `${Math.round(percentage * scaler) / scaler}%`;
+  return Math.round(number * scaler) / scaler;
 }
 
-module.exports = {compactCountsToLineNumbers, sum, formatPercent}
+function formatPercent(percentage, dp = 1) {
+  return `${roundToPrecision(percentage, dp)}%`;
+}
+
+module.exports = {compactCountsToLineNumbers, sum, roundToPrecision, formatPercent}

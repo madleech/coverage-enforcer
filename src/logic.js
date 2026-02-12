@@ -96,9 +96,10 @@ function calculateCoverage(files) {
 }
 
 // Calculate total coverage across all files in the coverage data
-function calculateTotalCoverage(coverageData) {
+function calculateTotalCoverageMetrics(coverageData) {
   let totalExecutableLines = 0;
   let totalExecutedLines = 0;
+  const totalFiles = Object.keys(coverageData).length;
 
   for (const filePath in coverageData) {
     const lineCounts = coverageData[filePath];
@@ -114,9 +115,21 @@ function calculateTotalCoverage(coverageData) {
     }
   }
 
-  return totalExecutableLines > 0
+  const coveragePercentage = totalExecutableLines > 0
     ? (totalExecutedLines / totalExecutableLines) * 100
     : 100;
+
+  return {
+    coveragePercentage: util.roundToPrecision(coveragePercentage, 3),
+    totalExecutableLines,
+    totalExecutedLines,
+    TotalMissedLines: totalExecutableLines - totalExecutedLines,
+    totalFiles
+  }
+}
+
+function calculateChangedLinesCount(files) {
+  return util.sum(files.map(file => file.changedLinesCount));
 }
 
 // generate summary for attaching to check.
@@ -124,14 +137,14 @@ function calculateTotalCoverage(coverageData) {
 // title = shown next to check. Very short summary.
 // summary = shown at top of job.
 // details = shown in body of job, contains full details of job
-function summarize({files, relevantFiles, coveragePercentage}) {
+function summarize({files, relevantFiles, coveragePercentage, totalCoverageMetrics}) {
   const totalRelevantChangedLines = util.sum(relevantFiles.map(file => file.relevantLinesCount));
 
   const title = `Coverage for changed lines: ${util.formatPercent(coveragePercentage)}`;
   const summary = `Based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
   let details = [
     "| File | Skipped | Changed Lines | Changed Unexecuted Lines | Coverage |",
-    "|------|---------|---------------|--------------------------|----------|",
+    "|:-----|:-------:|---------------|--------------------------|---------:|",
   ];
   files.forEach(file => {
     if (file.skipped) {
@@ -144,6 +157,21 @@ function summarize({files, relevantFiles, coveragePercentage}) {
       )
     }
   });
+
+  // add in overall test suite metrics:
+  //   - total lines executed
+  //   - total lines not executed
+  //   - total lines in suite
+  //   - total files in suite
+  details.push(...["", "## Overall test suite metrics", ""]);
+  details.push("| Metric | Value |");
+  details.push("|:-------|------:|");
+  details.push(`| Executed lines | ${totalCoverageMetrics.totalExecutedLines} |`);
+  details.push(`| Missed lines | ${totalCoverageMetrics.TotalMissedLines} |`);
+  details.push(`| Total lines | ${totalCoverageMetrics.totalExecutableLines} |`);
+  details.push(`| Total files | ${totalCoverageMetrics.totalFiles} |`);
+  details.push(`| Total coverage | ${util.formatPercent(totalCoverageMetrics.coveragePercentage, 2)} |`);
+
   return {title, summary, details: details.join('\n')}
 }
 
@@ -202,8 +230,9 @@ async function run() {
 
     const annotations = mapToAnnotations(relevantFiles);
     const coveragePercentage = calculateCoverage(relevantFiles);
-    const totalCoveragePercentage = calculateTotalCoverage(coverageData);
-    const {title, summary, details} = summarize({files, relevantFiles, coveragePercentage});
+    const totalCoverageMetrics = calculateTotalCoverageMetrics(coverageData);
+    const changedLinesCount = calculateChangedLinesCount(relevantFiles);
+    const {title, summary, details} = summarize({files, relevantFiles, coveragePercentage, totalCoverageMetrics});
     core.debug(JSON.stringify({annotations}, "\n", 2));
     core.info([title, summary, details].join('\n\n'));
 
@@ -212,7 +241,12 @@ async function run() {
 
     // Set outputs
     core.setOutput('coverage-percentage', coveragePercentage);
-    core.setOutput('total-coverage-percentage', totalCoveragePercentage);
+    core.setOutput('total-coverage-percentage', totalCoverageMetrics.coveragePercentage);
+    core.setOutput('total-executable-lines', totalCoverageMetrics.totalExecutableLines);
+    core.setOutput('total-executed-lines', totalCoverageMetrics.totalExecutedLines);
+    core.setOutput('total-missed-lines', totalCoverageMetrics.TotalMissedLines);
+    core.setOutput('total-files', totalCoverageMetrics.totalFiles);
+    core.setOutput('changed-lines', changedLinesCount);
 
     // Fail if coverage is below threshold
     if (!success) {
@@ -227,4 +261,4 @@ async function run() {
   }
 }
 
-module.exports = {read, determineChangedFiles, determineCommitSha, calculateCoverage, calculateTotalCoverage, summarize, passed, createCheck, run}
+module.exports = {read, determineChangedFiles, determineCommitSha, calculateCoverage, calculateTotalCoverageMetrics, summarize, passed, createCheck, run}

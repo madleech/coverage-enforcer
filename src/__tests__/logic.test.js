@@ -165,15 +165,21 @@ describe('Coverage Annotator', () => {
     })
   })
 
-  describe('calculateTotalCoverage', () => {
+  describe('calculateTotalCoverageMetrics', () => {
     it('calculates total coverage for multiple files', () => {
       const coverageData = {
         'src/file1.js': [1, 1, 0, null, 1], // 4 executable lines, 3 executed = 75%
         'src/file2.js': [1, 0, 1, 1, null], // 4 executable lines, 3 executed = 75%
       };
       // Total: 8 executable lines, 6 executed = 75%
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBe(75);
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 75,
+        totalExecutableLines: 8,
+        totalExecutedLines: 6,
+        TotalMissedLines: 2,
+        totalFiles: 2
+      });
     });
 
     it('returns 100% when all lines are covered', () => {
@@ -182,8 +188,14 @@ describe('Coverage Annotator', () => {
         'src/file2.js': [1, 1, null, 1], // 3 executable lines, 3 executed = 100%
       };
       // Total: 7 executable lines, 7 executed = 100%
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBe(100);
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 100,
+        totalExecutableLines: 7,
+        totalExecutedLines: 7,
+        TotalMissedLines: 0,
+        totalFiles: 2
+      });
     });
 
     it('returns 0% when no lines are covered', () => {
@@ -192,14 +204,26 @@ describe('Coverage Annotator', () => {
         'src/file2.js': [0, 0, null, 0], // 3 executable lines, 0 executed = 0%
       };
       // Total: 7 executable lines, 0 executed = 0%
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBe(0);
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 0,
+        totalExecutableLines: 7,
+        totalExecutedLines: 0,
+        TotalMissedLines: 7,
+        totalFiles: 2
+      });
     });
 
     it('handles empty coverage data', () => {
       const coverageData = {};
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBe(100); // Returns 100% when no executable lines
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 100,
+        totalExecutableLines: 0,
+        totalExecutedLines: 0,
+        TotalMissedLines: 0,
+        totalFiles: 0
+      });
     });
 
     it('handles files with only null values (no executable lines)', () => {
@@ -207,24 +231,42 @@ describe('Coverage Annotator', () => {
         'src/file1.js': [null, null, null],
         'src/file2.js': [null, null],
       };
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBe(100); // Returns 100% when no executable lines
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 100,
+        totalExecutableLines: 0,
+        totalExecutedLines: 0,
+        TotalMissedLines: 0,
+        totalFiles: 2
+      });
     });
 
     it('correctly calculates coverage with mixed null and executable lines', () => {
       const coverageData = {
         'src/file1.js': [null, 1, null, 0, null, 1, null], // 3 executable lines, 2 executed = 66.67%
       };
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBeCloseTo(66.67, 1);
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 66.667,
+        totalExecutableLines: 3,
+        totalExecutedLines: 2,
+        TotalMissedLines: 1,
+        totalFiles: 1
+      });
     });
 
     it('handles single file with partial coverage', () => {
       const coverageData = {
         'src/file1.js': [1, 0, 1, 0, 1], // 5 executable lines, 3 executed = 60%
       };
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBe(60);
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 60,
+        totalExecutableLines: 5,
+        totalExecutedLines: 3,
+        TotalMissedLines: 2,
+        totalFiles: 1
+      });
     });
 
     it('handles files with different coverage percentages', () => {
@@ -234,8 +276,14 @@ describe('Coverage Annotator', () => {
         'src/file3.js': [0, 0, 0], // 3 executable lines, 0 executed = 0%
       };
       // Total: 9 executable lines, 4 executed = 44.44%
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBeCloseTo(44.44, 1);
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 44.444,
+        totalExecutableLines: 9,
+        totalExecutedLines: 4,
+        TotalMissedLines: 5,
+        totalFiles: 3
+      });
     });
 
     it('handles large numbers correctly', () => {
@@ -244,8 +292,14 @@ describe('Coverage Annotator', () => {
         'src/file2.js': Array(100).fill(0), // 100 executable lines, 0 executed = 0%
       };
       // Total: 200 executable lines, 100 executed = 50%
-      const result = logic.calculateTotalCoverage(coverageData);
-      expect(result).toBe(50);
+      const result = logic.calculateTotalCoverageMetrics(coverageData);
+      expect(result).toEqual({
+        coveragePercentage: 50,
+        totalExecutableLines: 200,
+        totalExecutedLines: 100,
+        TotalMissedLines: 100,
+        totalFiles: 2
+      });
     });
   })
 
