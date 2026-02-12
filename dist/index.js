@@ -30229,7 +30229,7 @@ function summarize({files, relevantFiles, coveragePercentage, totalCoverageMetri
   const summary = `Based on ${totalRelevantChangedLines} lines changed in ${relevantFiles.length} files.`;
   let details = [
     "| File | Skipped | Changed Lines | Changed Unexecuted Lines | Coverage |",
-    "|------|---------|---------------|--------------------------|----------|",
+    "|:-----|:-------:|---------------|--------------------------|---------:|",
   ];
   files.forEach(file => {
     if (file.skipped) {
@@ -30250,12 +30250,12 @@ function summarize({files, relevantFiles, coveragePercentage, totalCoverageMetri
   //   - total files in suite
   details.push(...["", "## Overall test suite metrics", ""]);
   details.push("| Metric | Value |");
-  details.push("|--------|-------|");
+  details.push("|:-------|------:|");
   details.push(`| Executed lines | ${totalCoverageMetrics.totalExecutedLines} |`);
   details.push(`| Missed lines | ${totalCoverageMetrics.TotalMissedLines} |`);
-  details.push(`| Total coverage | ${util.formatPercent(totalCoverageMetrics.coveragePercentage, 2)} |`);
   details.push(`| Total lines | ${totalCoverageMetrics.totalExecutableLines} |`);
   details.push(`| Total files | ${totalCoverageMetrics.totalFiles} |`);
+  details.push(`| Total coverage | ${util.formatPercent(totalCoverageMetrics.coveragePercentage, 2)} |`);
 
   return {title, summary, details: details.join('\n')}
 }
