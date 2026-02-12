@@ -22,10 +22,16 @@ outputs:
     description: 'Percentage of changed lines that are covered by tests'
   total-coverage-percentage:
     description: 'Total coverage percentage of all files covered by tests'
+  total-executable-lines:
+    description: 'Total number of executable lines in the codebase'
+  total-executed-lines:
+    description: 'Total number of executed lines in the codebase'
+  total-missed-lines:
+    description: 'Total number of missed lines in the codebase'
+  total-files:
+    description: 'Total number of files in the codebase'
   changed-lines:
     description: 'Total number of changed lines'
-  covered-lines:
-    description: 'Number of changed lines that are covered by tests'
 runs:
   using: 'node20'
   main: 'dist/index.js'
