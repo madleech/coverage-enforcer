@@ -33,5 +33,5 @@ outputs:
   changed-lines:
     description: 'Total number of changed lines'
 runs:
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
